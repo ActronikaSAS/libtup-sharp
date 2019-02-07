@@ -19,6 +19,8 @@ namespace Tup
         CMD_ACTIVATE_INTERNAL_SENSORS = 20,
         CMD_GET_INPUT_VALUE = 21,
         CMD_SET_INPUT_VALUE = 22,
+        CMD_SET_IV_MODEL_ACTIVE = 23,
+        CMD_SET_IV_MODEL_DEVICE_TYPE = 24,
 
         RESP_VERSION = 100,
         RESP_PARAMETER = 101,
@@ -111,5 +113,10 @@ namespace Tup
         [DllImport("tup", CharSet = CharSet.Ansi, EntryPoint = "tup_message_parse_resp_version")]
         public static extern int parseRespVersion(IntPtr msg, out IntPtr version);
 
+        [DllImport("tup", CharSet = CharSet.Ansi, EntryPoint = "tup_message_init_set_iv_model_device_type")]
+        public static extern int initSetIvModelDeviceType(IntPtr msg, uint type);
+
+        [DllImport("tup", CharSet = CharSet.Ansi, EntryPoint = "tup_message_init_set_iv_model_active")]
+        public static extern int initSetIvModelActive(IntPtr msg, uint active);
     }
 }

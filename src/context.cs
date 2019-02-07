@@ -23,7 +23,46 @@ namespace Tup
         GCHandle m_gch;
         NewMessageCallback m_user_cb;
 
-        private Context() {}
+        public Context() {
+
+        }
+
+        public static void callbackNewMessage(Context ctx, Message msg)
+        {
+            if (msg is Tup.VersionMessage)
+            {
+                var vmsg = msg as Tup.VersionMessage;
+                Console.WriteLine(vmsg.version);
+            } else if (msg is Tup.AckMessage)
+            {
+                // Do nothing
+            } else if (msg is Tup.ErrorMessage)
+            {
+                var emsg = msg as Tup.ErrorMessage;
+                Console.WriteLine(emsg.error + " : " + emsg.cmd);
+            }
+        }
+
+        public void Open(string device)
+        {
+            Callbacks cbs = new Callbacks();
+            m_gch = GCHandle.Alloc(this);
+
+            cbs.new_msg_cb = new NativeNewMessageCallback(Context.onNewMessage);
+
+            IntPtr pnt = Marshal.AllocHGlobal(Marshal.SizeOf(cbs));
+            Marshal.StructureToPtr(cbs, pnt, false);
+
+            m_user_cb = callbackNewMessage;
+
+            m_ctx = create(pnt, GCHandle.ToIntPtr(m_gch));
+            if (m_ctx == IntPtr.Zero)
+                throw new System.InvalidOperationException();
+
+            int ret = open(device);
+            if (ret != 0)
+                throw new System.InvalidOperationException();
+        }
 
         public Context(string device, NewMessageCallback cb)
         {
@@ -37,8 +76,12 @@ namespace Tup
 
             m_user_cb = cb;
 
-            m_ctx = create(device, pnt, GCHandle.ToIntPtr(m_gch));
+            m_ctx = create(pnt, GCHandle.ToIntPtr(m_gch));
             if (m_ctx == IntPtr.Zero)
+                throw new System.InvalidOperationException();
+
+            int ret = open(device);
+            if (ret != 0)
                 throw new System.InvalidOperationException();
         }
 
@@ -46,6 +89,20 @@ namespace Tup
         {
             Dispose(true);
             GC.SuppressFinalize(this);
+        }
+
+        public void Play(int id) {
+            send(new Tup.LoadEffectCmdMessage(0, id));
+            send(new Tup.BindEffectCmdMessage(0, 3));
+            send(new Tup.PlayEffectCmdMessage(0));
+        }
+
+        public void IVModelSetDevice(uint type) {
+            send(new Tup.SetIVModelDeviceTypeMessage(type));
+        }
+
+        public void IVModelSetActive(bool active) {
+            send(new Tup.SetIVModelActive(active));
         }
 
         protected virtual void Dispose(bool disposing)
@@ -70,6 +127,16 @@ namespace Tup
             Dispose(false);
         }
 
+        public int open(string device)
+        {
+            return open(m_ctx, device);
+        }
+
+        public void close()
+        {
+            close(m_ctx);
+        }
+
         public int send(Message msg)
         {
             return sendNative(m_ctx, msg.toIntPtr());
@@ -85,17 +152,28 @@ namespace Tup
             return processFdNative(m_ctx);
         }
 
+        public int waitAndProcess(int timeout_ms)
+        {
+            return waitAndProcess(m_ctx, timeout_ms);
+        }
+
         private void callUserCallback(Tup.Message msg)
         {
             m_user_cb(this,msg);
         }
 
         [DllImport("tup", CharSet=CharSet.Ansi, EntryPoint = "tup_context_new")]
-        private static extern IntPtr create(string device, IntPtr cbs,
-                IntPtr userdata);
+        private static extern IntPtr create(IntPtr cbs, IntPtr userdata);
 
         [DllImport("tup", EntryPoint = "tup_context_free")]
         private static extern void destroy(IntPtr ctx);
+
+
+        [DllImport("tup", EntryPoint = "tup_context_open")]
+        private static extern int open(IntPtr ctx, string device);
+
+        [DllImport("tup", EntryPoint = "tup_context_close")]
+        private static extern void close(IntPtr ctx);
 
         [DllImport("tup", EntryPoint = "tup_context_get_fd")]
         private static extern IntPtr getFdNative(IntPtr ctx);
@@ -105,6 +183,10 @@ namespace Tup
 
         [DllImport("tup", EntryPoint = "tup_context_process_fd")]
         private static extern int processFdNative(IntPtr ctx);
+
+
+        [DllImport("tup", EntryPoint = "tup_context_wait_and_process")]
+        private static extern int waitAndProcess(IntPtr ctx, int timeout_ms);
 
         protected static void onNewMessage(IntPtr ictx, IntPtr imsg,
                 IntPtr userdata)

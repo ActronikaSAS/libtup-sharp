@@ -130,4 +130,20 @@ namespace Tup
             version = Marshal.PtrToStringAnsi(ver);
         }
     }
+
+    public class SetIVModelDeviceTypeMessage : Message
+    {
+        public SetIVModelDeviceTypeMessage(uint type)
+        {
+            NativeMessage.initSetIvModelDeviceType(m_msg, type);
+        }
+    }
+
+    public class SetIVModelActive : Message
+    {
+        public SetIVModelActive(bool active)
+        {
+            NativeMessage.initSetIvModelActive(m_msg, (uint) (active ? 1 : 0));
+        }
+    }
 }

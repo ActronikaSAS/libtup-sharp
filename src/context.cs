@@ -97,12 +97,8 @@ namespace Tup
             send(new Tup.PlayEffectCmdMessage(0));
         }
 
-        public void IVModelSetDevice(uint type) {
-            send(new Tup.SetIVModelDeviceTypeMessage(type));
-        }
-
-        public void IVModelSetActive(bool active) {
-            send(new Tup.SetIVModelActive(active));
+        public void SetFilterActive(uint actuatorId, bool active) {
+            send(new Tup.SetFilterActive(actuatorId, active));
         }
 
         protected virtual void Dispose(bool disposing)

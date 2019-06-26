@@ -131,19 +131,11 @@ namespace Tup
         }
     }
 
-    public class SetIVModelDeviceTypeMessage : Message
+    public class SetFilterActive : Message
     {
-        public SetIVModelDeviceTypeMessage(uint type)
+        public SetFilterActive(uint actuatorId, bool active)
         {
-            NativeMessage.initSetIvModelDeviceType(m_msg, type);
-        }
-    }
-
-    public class SetIVModelActive : Message
-    {
-        public SetIVModelActive(bool active)
-        {
-            NativeMessage.initSetIvModelActive(m_msg, (uint) (active ? 1 : 0));
+            NativeMessage.initSetFilterActive(m_msg, FilterId.FILTER_ID_BAND_NORM, actuatorId, active);
         }
     }
 }
